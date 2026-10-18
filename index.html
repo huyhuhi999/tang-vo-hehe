@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thư Gửi Em Yêu - 20/10</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff0f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; position: relative; }
+        
+        /* Tường ảnh nền xuất hiện lần lượt khi kết thúc lá thư */
+        .bg-photo-wall { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 20px; box-sizing: border-box; pointer-events: none; }
+        .bg-photo-wall img { width: 100%; height: 220px; object-fit: cover; border-radius: 10px; opacity: 0; transform: scale(0.8) translateY(20px); transition: all 1.5s ease-in-out; filter: blur(0.5px); }
+        .bg-photo-wall img.reveal { opacity: 0.18; transform: scale(1) translateY(0); }
+
+        .main-title { color: #ff3366; text-shadow: 2px 2px 4px rgba(0,0,0,0.05); font-size: 28px; margin-bottom: 20px; text-align: center; font-weight: bold; z-index: 2; transition: 0.5s; }
+        .wrapper { display: flex; gap: 30px; justify-content: center; align-items: center; max-width: 1200px; width: 100%; z-index: 2; height: 600px; position: relative; }
+        
+        /* KHU VỰC TRÒ CHƠI XẾP HÌNH 9 Ô LỘN XỘN (GAME SLIDING PUZZLE) */
+        .puzzle-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(255, 182, 193, 0.4); text-align: center; max-width: 380px; width: 100%; transition: all 1s ease-in-out; position: absolute; z-index: 10; }
+        #puzzleGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: #ffb6c1; padding: 6px; border-radius: 12px; margin-top: 15px; width: 330px; height: 330px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+        .puzzle-piece { width: 104px; height: 104px; background-color: #ffe6eb; border-radius: 6px; cursor: pointer; background-repeat: no-repeat; box-shadow: inset 0 0 5px rgba(255,255,255,0.6); transition: all 0.2s ease; }
+        .puzzle-piece:active { transform: scale(0.96); }
+        .puzzle-piece.empty { background: #ffe6eb !important; border: 2px dashed #ffb6c1; cursor: default; box-shadow: none; }
+
+        /* Hai khối nội dung chính xuất hiện sau khi xếp đúng */
+        .card { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.06); padding: 30px; width: 46%; height: 560px; box-sizing: border-box; backdrop-filter: blur(5px); opacity: 0; transform: scale(0.9); transition: all 1.2s cubic-bezier(0.25, 1, 0.5, 1); position: absolute; }
+        
+        /* Khối lá thư (Nằm bên trái) */
+        .letter-card { left: 0; display: none; border: 2px solid #ffb6c1; }
+        .letter-header { color: #ff3366; font-size: 22px; font-weight: bold; border-bottom: 1px dashed #ffb6c1; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
+        .letter-content { font-size: 15px; line-height: 1.8; color: #e6005c; font-weight: 500; font-style: italic; white-space: pre-wrap; height: 440px; overflow-y: auto; }
+        .letter-content::-webkit-scrollbar { width: 3px; }
+        .letter-content::-webkit-scrollbar-thumb { background: #ffb6c1; }
+
+        /* Khối cây Canvas (Dịch chuyển sang bên phải) */
+        .tree-card { right: 27%; width: 46%; display: none; flex-direction: column; align-items: center; justify-content: flex-start; }
+        .girl-mini-photo { max-width: 110px; max-height: 120px; object-fit: cover; border-radius: 10px; border: 3px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 5px; }
+        #canvasContainer { width: 100%; height: 380px; position: relative; margin-top: auto; }
+        canvas { width: 100%; height: 100%; }
+
+        #clickHint { position: absolute; bottom: 15px; color: #ff3366; font-size: 16px; font-weight: bold; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; z-index: 100; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <!-- TƯỜNG ẢNH NỀN PHÍA SAU KHI CLICK CHẠM MÀN HÌNH -->
+    <div class="bg-photo-wall" id="photoWall">
+        <img src="anh1.jpg" alt="Kỷ niệm 1">
+        <img src="anh2.jpg" alt="Kỷ niệm 2">
+        <img src="anh3.jpg" alt="Kỷ niệm 3">
+        <img src="anh4.jpg" alt="Kỷ niệm 4">
+        <img src="anh5.jpg" alt="Kỷ niệm 5">
+        <img src="anh6.jpg" alt="Kỷ niệm 6">
+        <img src="anh7.jpg" alt="Kỷ niệm 7">
+        <img src="anh8.jpg" alt="Kỷ niệm 8">
+    </div>
+
+    <div class="main-title" id="webTitle">🧩 Trò Chơi Ghép Hình Nhận Quà 20/10 🧩</div>
+
+    <div class="wrapper" id="stageWrapper">
+        
+        <!-- BƯỚC 1: Khung lưới 9 ô tự xáo trộn lộn xộn ảnh của bạn gái -->
+        <div class="puzzle-container" id="puzzleBox">
+            <h3 style="color: #ff3366; margin: 0;">💝 Xếp Đúng Ảnh Để Mở Thư Nhé 💝</h3>
+            <p style="font-size: 13px; color: #888; margin: 5px 0 0 0;">Bấm vào ô cạnh ô trống để dịch chuyển vị trí ảnh!</p>
+            <div id="puzzleGrid"></div>
+        </div>
+
+        <!-- BƯỚC 3: Khối Lá thư xuất hiện bên trái -->
+        <div class="card letter-card" id="letterBox">
+            <div class="letter-header">💗 Thư Gửi Công Chúa Nhỏ 💗</div>
+            <div class="letter-content" id="typewriterText"></div>
+        </div>
+
+        <!-- BƯỚC 2 & 3: Khối Cây Canvas hiển thị mọc và dịch chuyển -->
+        <div class="card tree-card" id="treeBox">
+            <img id="finalPhoto" src="bangai.jpg" class="girl-mini-photo" alt="Bạn gái">
+            <div id="canvasContainer">
+                <canvas id="treeCanvas"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="clickHint">👉 Bấm vào màn hình để mở hộp kỷ niệm... 🥰</div>
+
+    <script>
+        const heartLetter = "Gửi em...\n\nChúc công chúa của anh một ngày ngày Phụ nữ Việt Nam 20/10 thật vui vẻ và ngập tràn hạnh phúc nhéee 💖 Anh mong em lúc nào cũng giữ được nụ cười tươi tắn xinh xắn trên môi, luôn vui vẻ, bình an và gặp thật nhiều điều may mắn trong cuộc sống. Cảm ơn em vì đã xuất hiện và trở thành một phần vô cùng đặc biệt trong thế giới của anh.\n\nAnh không biết sau này sẽ có bao nhiêu điều thay đổi, nhưng anh mong mình vẫn có thể ở bên cạnh em, cùng em chia sẻ những niềm vui, an ủi em những lúc buồn và yêu thương em bằng tất cả sự chân thành của mình. Anh không hứa sẽ khiến mọi ngày của em đều hoàn hảo, nhưng anh sẽ cố gắng để em luôn cảm nhận được rằng mình được yêu thương và trân trọng nhất. Chúc cô gái của anh ngày 20/10 ngập tràn hoa, quà, niềm vui và đặc biệt là thật nhiều tình yêu từ anh nheee.\n\nYêu em nhiều lắmmm, bé yêu của anh 🥰 🧸 🌹";
+        
+        let letterFinished = false;
+        let currentClickImageIndex = 0;
+
+        const rows = 3;
+        const cols = 3;
+        let currentOrder =;
+        let correctOrder =;
+
+        window.onload = function() {
+            initPuzzleGame();
+        };
+
+        function initPuzzleGame() {
+            do {
+                for (let i = currentOrder.length - 2; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [currentOrder[i], currentOrder[j]] = [currentOrder[j], currentOrder[i]];
+                }
+            } while (checkWinPuzzle());
+
+            renderPuzzleGrid();
+        }
+
+        function renderPuzzleGrid() {
+            const grid = document.getElementById('puzzleGrid');
+            grid.innerHTML = "";
+
+            currentOrder.forEach((pieceIndex, positionIndex) => {
+                const piece = document.createElement('div');
+                piece.className = 'puzzle-piece';
+                
+                if (pieceIndex === 8) {
+                    piece.classList.add('empty');
+                } else {
+                    piece.style.backgroundImage = "url('bangai.jpg')";
+                    piece.style.backgroundSize = "312px 312px";
+                    
+                    let r = Math.floor(pieceIndex / 3);
+                    let c = pieceIndex % 3;
+                    piece.style.backgroundPosition = `-${c * 104}px -${r * 104}px`;
+                    
+                    piece.onclick = () => movePiece(positionIndex);
+                }
+                grid.appendChild(piece);
+            });
+        }
+
+        function movePiece(positionIndex) {
+            const emptyIndex = currentOrder.indexOf(8);
+            
+            const pr = Math.floor(positionIndex / 3);
+            const pc = positionIndex % 3;
+            const er = Math.floor(emptyIndex / 3);
+            const ec = emptyIndex % 3;
+
+            if ((Math.abs(pr - er) === 1 && pc === ec) || (Math.abs(pc - ec) === 1 && pr === er)) {
+                [currentOrder[positionIndex], currentOrder[emptyIndex]] = [currentOrder[emptyIndex], currentOrder[positionIndex]];
+                renderPuzzleGrid();
+
+                if (checkWinPuzzle()) {
+                    const emptyPiece = document.querySelector('.puzzle-piece.empty');
+                    if(emptyPiece) {
+                        emptyPiece.classList.remove('empty');
+                        emptyPiece.style.backgroundImage = "url('bangai.jpg')";
+                        emptyPiece.style.backgroundSize = "312px 312px";
+                        emptyPiece.style.backgroundPosition = "-208px -208px";
+                    }
+
+                    setTimeout(() => {
+                        document.getElementById('puzzleBox').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('puzzleBox').style.display = 'none';
